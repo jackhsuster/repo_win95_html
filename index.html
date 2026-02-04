@@ -349,6 +349,43 @@
       font-size: 14px;
     }
 
+    .calculator {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .calculator-display {
+      height: 42px;
+      padding: 6px;
+      text-align: right;
+      font-family: "Courier New", monospace;
+      font-size: 18px;
+      background: var(--win-light);
+    }
+
+    .calculator-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      flex: 1;
+    }
+
+    .calculator-button {
+      height: 28px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--win-silver);
+    }
+
+    .calculator-button.wide {
+      grid-column: span 4;
+      height: 32px;
+      font-weight: bold;
+    }
+
     .context-menu {
       position: absolute;
       list-style: none;
@@ -405,6 +442,10 @@
         <div class="icon-img"></div>
         <div class="icon-label">Command Prompt</div>
       </div>
+      <div class="desktop-icon" data-app="calculator">
+        <div class="icon-img"></div>
+        <div class="icon-label">小算盤</div>
+      </div>
     </div>
     <ul id="desktop-context-menu" class="context-menu">
       <li data-action="refresh">Refresh</li>
@@ -422,6 +463,7 @@
               <li data-app="notepad">Notepad</li>
               <li data-app="cmd">Command Prompt</li>
               <li data-app="mycomputer">My Computer</li>
+              <li data-app="calculator">小算盤</li>
             </ul>
           </li>
         </ul>
@@ -1196,6 +1238,193 @@
       }
     }
 
+    // CalculatorApp: Win95 style calculator with memory keys and keyboard input.
+    class CalculatorApp {
+      constructor(windowManager) {
+        this.windowManager = windowManager;
+        this.id = "calculator";
+      }
+
+      open() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "calculator";
+
+        const display = document.createElement("div");
+        display.className = "calculator-display sunken";
+        display.textContent = "0";
+
+        const buttonGrid = document.createElement("div");
+        buttonGrid.className = "calculator-buttons";
+
+        const layout = [
+          "MC", "MR", "M+", "M-",
+          "7", "8", "9", "/",
+          "4", "5", "6", "*",
+          "1", "2", "3", "-",
+          "0", ".", "=", "+"
+        ];
+
+        layout.forEach((label) => {
+          const btn = document.createElement("button");
+          btn.className = "calculator-button bevel-raised";
+          btn.textContent = label;
+          btn.dataset.value = label;
+          buttonGrid.append(btn);
+        });
+
+        const clearButton = document.createElement("button");
+        clearButton.className = "calculator-button bevel-raised wide";
+        clearButton.textContent = "C";
+        clearButton.dataset.value = "C";
+
+        wrapper.append(display, buttonGrid, clearButton);
+
+        const windowInstance = new AppWindow(
+          {
+            id: `calculator-${Date.now()}`,
+            title: "小算盤",
+            width: 300,
+            height: 360,
+            content: wrapper
+          },
+          this.windowManager
+        );
+
+        this.windowManager.registerWindow(windowInstance);
+
+        const state = {
+          current: "0",
+          operator: null,
+          operand: null,
+          memory: 0,
+          resetNext: false
+        };
+
+        const updateDisplay = () => {
+          display.textContent = state.current;
+        };
+
+        const toNumber = (value) => {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const applyOperator = (nextOperator) => {
+          const currentNumber = toNumber(state.current);
+          if (state.operand === null) {
+            state.operand = currentNumber;
+          } else if (state.operator) {
+            if (state.operator === "+") state.operand += currentNumber;
+            if (state.operator === "-") state.operand -= currentNumber;
+            if (state.operator === "*") state.operand *= currentNumber;
+            if (state.operator === "/") state.operand = currentNumber === 0 ? 0 : state.operand / currentNumber;
+            state.current = `${state.operand}`;
+          }
+          state.operator = nextOperator;
+          state.resetNext = true;
+        };
+
+        const inputDigit = (digit) => {
+          if (state.resetNext) {
+            state.current = digit === "." ? "0." : digit;
+            state.resetNext = false;
+            updateDisplay();
+            return;
+          }
+          if (digit === "." && state.current.includes(".")) return;
+          if (state.current === "0" && digit !== ".") {
+            state.current = digit;
+          } else {
+            state.current += digit;
+          }
+          updateDisplay();
+        };
+
+        const handleCommand = (value) => {
+          if (value === "C") {
+            state.current = "0";
+            state.operator = null;
+            state.operand = null;
+            state.resetNext = false;
+            updateDisplay();
+            return;
+          }
+          if (["+", "-", "*", "/"].includes(value)) {
+            applyOperator(value);
+            updateDisplay();
+            return;
+          }
+          if (value === "=") {
+            applyOperator(null);
+            state.operator = null;
+            state.resetNext = true;
+            updateDisplay();
+            return;
+          }
+          if (value === "MC") {
+            state.memory = 0;
+            return;
+          }
+          if (value === "MR") {
+            state.current = `${state.memory}`;
+            state.resetNext = true;
+            updateDisplay();
+            return;
+          }
+          if (value === "M+") {
+            state.memory += toNumber(state.current);
+            return;
+          }
+          if (value === "M-") {
+            state.memory -= toNumber(state.current);
+            return;
+          }
+          if (value === ".") {
+            inputDigit(".");
+            return;
+          }
+          if (/^\d$/.test(value)) {
+            inputDigit(value);
+          }
+        };
+
+        buttonGrid.addEventListener("click", (event) => {
+          const button = event.target.closest("button");
+          if (!button) return;
+          handleCommand(button.dataset.value);
+        });
+
+        clearButton.addEventListener("click", () => handleCommand("C"));
+
+        windowInstance.element.addEventListener("keydown", (event) => {
+          const key = event.key;
+          if (/^\d$/.test(key)) {
+            handleCommand(key);
+            event.preventDefault();
+          }
+          if (key === ".") {
+            handleCommand(".");
+            event.preventDefault();
+          }
+          if (["+", "-", "*", "/"].includes(key)) {
+            handleCommand(key);
+            event.preventDefault();
+          }
+          if (key === "Enter" || key === "=") {
+            handleCommand("=");
+            event.preventDefault();
+          }
+          if (key.toLowerCase() === "c") {
+            handleCommand("C");
+            event.preventDefault();
+          }
+        });
+
+        windowInstance.element.tabIndex = 0;
+        windowInstance.element.focus();
+      }
+    }
+
     const storage = new StorageManager("win95");
     const soundManager = new SoundManager(storage);
     const taskbar = new Taskbar(
@@ -1221,6 +1450,7 @@
     appRegistry.register(new CmdApp(windowManager));
     appRegistry.register(new MyComputerApp(windowManager));
     appRegistry.register(new SettingsApp(windowManager, storage, soundManager));
+    appRegistry.register(new CalculatorApp(windowManager));
 
     windowManager.desktop.appRegistry = appRegistry;
     windowManager.desktop.init();
