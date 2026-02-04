@@ -12,6 +12,7 @@ Built with ES6+ OOP classes and zero external dependencies.
   - **Notepad** with auto-save to `localStorage`.
   - **Command Prompt** with `help`, `ver`, `date`, `cls`.
   - **My Computer** (static display).
+  - **小算盤** with +, -, *, /, memory (MC/MR/M+/M-), and keyboard input.
   - **Control Panel** (sound toggle).
 - Optional click beep via Web Audio API.
 - No CSS transitions (instant interactions).
