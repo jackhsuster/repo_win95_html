@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windows 95 Web OS</title>
+  <style>
+    :root {
+      --win-silver: #c0c0c0;
+      --win-teal: #008080;
+      --win-blue: #000080;
+      --win-dark: #000000;
+      --win-shadow: #808080;
+      --win-light: #ffffff;
+      --taskbar-height: 40px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Arial, sans-serif;
+      background: var(--win-teal);
+      user-select: none;
+    }
+
+    .desktop {
+      position: relative;
+      width: 100%;
+      height: calc(100% - var(--taskbar-height));
+      background: var(--win-teal);
+      padding: 12px;
+    }
+
+    .desktop-icons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .desktop-icon {
+      width: 72px;
+      text-align: center;
+      color: var(--win-light);
+      cursor: default;
+    }
+
+    .desktop-icon:active .icon-label {
+      background: var(--win-blue);
+      color: var(--win-light);
+    }
+
+    .icon-img {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 6px;
+      background: var(--win-silver);
+      border: 1px solid var(--win-dark);
+      box-shadow: inset 1px 1px 0 var(--win-light);
+    }
+
+    .icon-label {
+      display: inline-block;
+      padding: 1px 3px;
+    }
+
+    .taskbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--taskbar-height);
+      background: var(--win-silver);
+      border-top: 2px solid var(--win-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+    }
+
+    .bevel-raised {
+      border: 2px solid;
+      border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+      background: var(--win-silver);
+    }
+
+    .bevel-pressed {
+      border: 2px solid;
+      border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
+      background: var(--win-silver);
+    }
+
+    .start-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .start-button.pressed {
+      border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
+    }
+
+    .start-icon {
+      width: 16px;
+      height: 16px;
+      background: var(--win-blue);
+      border: 1px solid var(--win-dark);
+    }
+
+    .taskbar-items {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .taskbar-item {
+      padding: 3px 10px;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    .taskbar-item.active {
+      border-color: var(--win-dark) var(--win-light) var(--win-light) var(--win-dark);
+    }
+
+    .taskbar-clock {
+      padding: 2px 8px;
+      min-width: 70px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .start-menu {
+      position: fixed;
+      bottom: var(--taskbar-height);
+      left: 4px;
+      width: 220px;
+      background: var(--win-silver);
+      border: 2px solid var(--win-dark);
+      border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+      display: none;
+      z-index: 5000;
+      box-shadow: 2px 2px 0 var(--win-dark);
+    }
+
+    .start-menu.visible {
+      display: flex;
+    }
+
+    .start-menu-sidebar {
+      width: 32px;
+      background: var(--win-blue);
+      color: var(--win-light);
+      font-weight: bold;
+      padding: 6px 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      text-align: center;
+    }
+
+    .start-menu-list {
+      list-style: none;
+      padding: 4px;
+      margin: 0;
+      flex: 1;
+    }
+
+    .start-menu-list li {
+      padding: 4px 8px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .start-menu-list li:hover {
+      background: var(--win-blue);
+      color: var(--win-light);
+    }
+
+    .menu-separator {
+      border-top: 1px solid var(--win-shadow);
+      border-bottom: 1px solid var(--win-light);
+      margin: 4px 0;
+      padding: 0;
+    }
+
+    .submenu::after {
+      content: ">";
+      position: absolute;
+      right: 8px;
+    }
+
+    .submenu-list {
+      list-style: none;
+      position: absolute;
+      top: 0;
+      left: 100%;
+      min-width: 180px;
+      padding: 4px;
+      margin: 0;
+      background: var(--win-silver);
+      border: 2px solid var(--win-dark);
+      border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+      display: none;
+      z-index: 5100;
+    }
+
+    .submenu:hover > .submenu-list {
+      display: block;
+    }
+
+    .window {
+      position: absolute;
+      background: var(--win-silver);
+      border: 2px solid var(--win-dark);
+      border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+      box-shadow: 2px 2px 0 var(--win-dark);
+    }
+
+    .window.minimized {
+      display: none;
+    }
+
+    .title-bar {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 4px;
+      background: var(--win-shadow);
+      color: var(--win-light);
+      cursor: default;
+    }
+
+    .window.active .title-bar {
+      background: var(--win-blue);
+    }
+
+    .title-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .title-icon {
+      width: 16px;
+      height: 16px;
+      background: var(--win-silver);
+      border: 1px solid var(--win-dark);
+    }
+
+    .title-bar-controls {
+      display: flex;
+      gap: 2px;
+    }
+
+    .title-button {
+      width: 18px;
+      height: 16px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 12px;
+      cursor: pointer;
+    }
+
+    .window-content {
+      height: calc(100% - 24px);
+      padding: 6px;
+      background: var(--win-silver);
+      overflow: hidden;
+    }
+
+    .resize-handle {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 14px;
+      height: 14px;
+      background: repeating-linear-gradient(
+        135deg,
+        var(--win-shadow) 0 2px,
+        var(--win-silver) 2px 4px
+      );
+      cursor: nwse-resize;
+    }
+
+    .sunken {
+      border: 2px solid;
+      border-color: var(--win-shadow) var(--win-light) var(--win-light) var(--win-shadow);
+      background: var(--win-light);
+    }
+
+    .notepad-text {
+      width: 100%;
+      height: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 6px;
+      resize: none;
+      outline: none;
+    }
+
+    .cmd-shell {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      color: #ffffff;
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .cmd-output {
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .cmd-input-line {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .cmd-input {
+      flex: 1;
+      background: #000000;
+      color: #ffffff;
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .context-menu {
+      position: absolute;
+      list-style: none;
+      margin: 0;
+      padding: 4px;
+      background: var(--win-silver);
+      border: 2px solid var(--win-dark);
+      border-color: var(--win-light) var(--win-dark) var(--win-dark) var(--win-light);
+      display: none;
+      z-index: 6000;
+    }
+
+    .context-menu.visible {
+      display: block;
+    }
+
+    .context-menu li {
+      padding: 4px 18px 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .context-menu li:hover {
+      background: var(--win-blue);
+      color: var(--win-light);
+    }
+
+    .settings-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .settings-panel label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="desktop" class="desktop">
+    <div class="desktop-icons">
+      <div class="desktop-icon" data-app="mycomputer">
+        <div class="icon-img"></div>
+        <div class="icon-label">My Computer</div>
+      </div>
+      <div class="desktop-icon" data-app="notepad">
+        <div class="icon-img"></div>
+        <div class="icon-label">Notepad</div>
+      </div>
+      <div class="desktop-icon" data-app="cmd">
+        <div class="icon-img"></div>
+        <div class="icon-label">Command Prompt</div>
+      </div>
+    </div>
+    <ul id="desktop-context-menu" class="context-menu">
+      <li data-action="refresh">Refresh</li>
+      <li data-action="properties">Properties</li>
+    </ul>
+  </div>
+
+  <div id="start-menu" class="start-menu">
+    <div class="start-menu-sidebar">Windows 95</div>
+    <ul class="start-menu-list">
+      <li class="submenu">Programs
+        <ul class="submenu-list">
+          <li class="submenu">Accessories
+            <ul class="submenu-list">
+              <li data-app="notepad">Notepad</li>
+              <li data-app="cmd">Command Prompt</li>
+              <li data-app="mycomputer">My Computer</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li class="submenu">Settings
+        <ul class="submenu-list">
+          <li data-app="settings">Control Panel</li>
+        </ul>
+      </li>
+      <li class="menu-separator"></li>
+      <li data-action="shutdown">Shut Down...</li>
+    </ul>
+  </div>
+
+  <div id="taskbar" class="taskbar">
+    <button id="start-button" class="start-button bevel-raised">
+      <span class="start-icon"></span>
+      Start
+    </button>
+    <div id="taskbar-items" class="taskbar-items"></div>
+    <div id="taskbar-clock" class="taskbar-clock bevel-raised"></div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const TASKBAR_HEIGHT = 40;
+
+    // StorageManager: wraps localStorage for notepad content and personalization settings.
+    class StorageManager {
+      constructor(prefix) {
+        this.prefix = prefix;
+      }
+
+      getString(key, fallback = "") {
+        const value = localStorage.getItem(this.keyFor(key));
+        return value === null ? fallback : value;
+      }
+
+      setString(key, value) {
+        localStorage.setItem(this.keyFor(key), value);
+      }
+
+      getBoolean(key, fallback = false) {
+        const value = this.getString(key, "");
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return fallback;
+      }
+
+      setBoolean(key, value) {
+        this.setString(key, value ? "true" : "false");
+      }
+
+      keyFor(key) {
+        return `${this.prefix}:${key}`;
+      }
+    }
+
+    // SoundManager: optional click-beep feedback using Web Audio API and user settings.
+    class SoundManager {
+      constructor(storage) {
+        this.storage = storage;
+        this.enabled = storage.getBoolean("soundEnabled", true);
+        this.audioContext = null;
+      }
+
+      setEnabled(enabled) {
+        this.enabled = enabled;
+        this.storage.setBoolean("soundEnabled", enabled);
+      }
+
+      playClick() {
+        if (!this.enabled) return;
+        const Context = window.AudioContext || window.webkitAudioContext;
+        if (!Context) return;
+        if (!this.audioContext) {
+          this.audioContext = new Context();
+        }
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.frequency.value = 720;
+        gain.gain.value = 0.05;
+        osc.connect(gain).connect(this.audioContext.destination);
+        osc.start();
+        osc.stop(this.audioContext.currentTime + 0.05);
+      }
+    }
+
+    // WindowManager: owns window lifecycle, z-index, focus, minimize, maximize, and close logic.
+    class WindowManager {
+      constructor(desktop, taskbar) {
+        this.desktop = desktop;
+        this.taskbar = taskbar;
+        this.windows = new Map();
+        this.zIndex = 10;
+        this.cascadeOffset = 0;
+      }
+
+      registerWindow(windowInstance) {
+        this.windows.set(windowInstance.id, windowInstance);
+        this.desktop.container.appendChild(windowInstance.element);
+        this.taskbar.addTaskButton(windowInstance);
+        this.positionWindow(windowInstance);
+        this.focusWindow(windowInstance);
+      }
+
+      positionWindow(windowInstance) {
+        const offset = this.cascadeOffset;
+        this.cascadeOffset = (this.cascadeOffset + 20) % 120;
+        windowInstance.setBounds(40 + offset, 40 + offset, windowInstance.width, windowInstance.height);
+      }
+
+      focusWindow(windowInstance) {
+        this.windows.forEach((win) => win.setActive(false));
+        windowInstance.setActive(true);
+        windowInstance.setZIndex(++this.zIndex);
+        this.taskbar.setActive(windowInstance.id);
+      }
+
+      minimizeWindow(windowInstance) {
+        windowInstance.minimize();
+        this.taskbar.setActive(windowInstance.id);
+        this.focusTopWindow();
+      }
+
+      toggleMaximize(windowInstance) {
+        if (windowInstance.isMaximized) {
+          windowInstance.restoreFromMaximize();
+        } else {
+          windowInstance.maximize();
+        }
+        this.focusWindow(windowInstance);
+      }
+
+      closeWindow(windowInstance) {
+        this.windows.delete(windowInstance.id);
+        this.taskbar.removeTaskButton(windowInstance.id);
+        windowInstance.element.remove();
+        this.focusTopWindow();
+      }
+
+      handleTaskClick(windowId) {
+        const win = this.windows.get(windowId);
+        if (!win) return;
+        if (win.isMinimized) {
+          win.restore();
+          this.focusWindow(win);
+          return;
+        }
+        if (win.isActive) {
+          win.minimize();
+          this.focusTopWindow();
+          return;
+        }
+        this.focusWindow(win);
+      }
+
+      focusTopWindow() {
+        let top = null;
+        this.windows.forEach((win) => {
+          if (!top || win.zIndex > top.zIndex) {
+            top = win;
+          }
+        });
+        if (top && !top.isMinimized) {
+          this.focusWindow(top);
+        } else {
+          this.taskbar.setActive(null);
+        }
+      }
+    }
+
+    // Desktop: handles icons, desktop right-click menu, and desktop-level interactions.
+    class Desktop {
+      constructor(container, contextMenu, appRegistry) {
+        this.container = container;
+        this.contextMenu = contextMenu;
+        this.appRegistry = appRegistry;
+        this.contextActionHandler = null;
+      }
+
+      init() {
+        this.bindIcons();
+        this.bindContextMenu();
+      }
+
+      bindIcons() {
+        const icons = this.container.querySelectorAll(".desktop-icon");
+        icons.forEach((icon) => {
+          icon.addEventListener("dblclick", () => {
+            const appId = icon.dataset.app;
+            this.appRegistry.open(appId);
+          });
+        });
+      }
+
+      bindContextMenu() {
+        this.container.addEventListener("contextmenu", (event) => {
+          if (event.target !== this.container) return;
+          event.preventDefault();
+          this.showContextMenu(event.clientX, event.clientY);
+        });
+
+        this.contextMenu.addEventListener("click", (event) => {
+          const item = event.target.closest("[data-action]");
+          if (!item) return;
+          if (this.contextActionHandler) {
+            this.contextActionHandler(item.dataset.action);
+          }
+          this.hideContextMenu();
+        });
+      }
+
+      setContextActionHandler(handler) {
+        this.contextActionHandler = handler;
+      }
+
+      showContextMenu(clientX, clientY) {
+        this.contextMenu.classList.add("visible");
+        const desktopRect = this.container.getBoundingClientRect();
+        const menuWidth = this.contextMenu.offsetWidth;
+        const menuHeight = this.contextMenu.offsetHeight;
+        let left = clientX - desktopRect.left;
+        let top = clientY - desktopRect.top;
+        left = Math.min(left, desktopRect.width - menuWidth);
+        top = Math.min(top, desktopRect.height - menuHeight);
+        this.contextMenu.style.left = `${Math.max(0, left)}px`;
+        this.contextMenu.style.top = `${Math.max(0, top)}px`;
+      }
+
+      hideContextMenu() {
+        this.contextMenu.classList.remove("visible");
+      }
+
+      isContextMenuClick(target) {
+        return this.contextMenu.contains(target);
+      }
+    }
+
+    // Taskbar: manages start menu, task buttons, and the system clock.
+    class Taskbar {
+      constructor(startButton, startMenu, itemsContainer, clock, appRegistry, soundManager) {
+        this.startButton = startButton;
+        this.startMenu = startMenu;
+        this.itemsContainer = itemsContainer;
+        this.clock = clock;
+        this.appRegistry = appRegistry;
+        this.soundManager = soundManager;
+        this.taskButtons = new Map();
+        this.taskClickHandler = null;
+      }
+
+      init() {
+        this.bindStartButton();
+        this.bindStartMenu();
+        this.startClock();
+      }
+
+      bindStartButton() {
+        this.startButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          this.toggleStartMenu();
+          this.soundManager.playClick();
+        });
+      }
+
+      bindStartMenu() {
+        this.startMenu.addEventListener("click", (event) => {
+          const item = event.target.closest("[data-app],[data-action]");
+          if (!item) return;
+          if (item.dataset.app) {
+            this.appRegistry.open(item.dataset.app);
+          }
+          if (item.dataset.action === "shutdown") {
+            window.alert("It is now safe to turn off your computer.");
+          }
+          this.hideStartMenu();
+        });
+      }
+
+      toggleStartMenu() {
+        if (this.startMenu.classList.contains("visible")) {
+          this.hideStartMenu();
+        } else {
+          this.showStartMenu();
+        }
+      }
+
+      showStartMenu() {
+        this.startMenu.classList.add("visible");
+        this.startButton.classList.add("pressed");
+      }
+
+      hideStartMenu() {
+        this.startMenu.classList.remove("visible");
+        this.startButton.classList.remove("pressed");
+      }
+
+      addTaskButton(windowInstance) {
+        const button = document.createElement("button");
+        button.className = "taskbar-item bevel-raised";
+        button.textContent = windowInstance.title;
+        button.addEventListener("click", () => {
+          if (this.taskClickHandler) {
+            this.taskClickHandler(windowInstance.id);
+          }
+          this.soundManager.playClick();
+        });
+        this.itemsContainer.appendChild(button);
+        this.taskButtons.set(windowInstance.id, button);
+      }
+
+      removeTaskButton(windowId) {
+        const button = this.taskButtons.get(windowId);
+        if (button) {
+          button.remove();
+          this.taskButtons.delete(windowId);
+        }
+      }
+
+      setActive(windowId) {
+        this.taskButtons.forEach((button, id) => {
+          if (id === windowId) {
+            button.classList.add("active");
+          } else {
+            button.classList.remove("active");
+          }
+        });
+      }
+
+      setTaskClickHandler(handler) {
+        this.taskClickHandler = handler;
+      }
+
+      startClock() {
+        const updateClock = () => {
+          const now = new Date();
+          const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          this.clock.textContent = time;
+        };
+        updateClock();
+        setInterval(updateClock, 1000);
+      }
+
+      isStartMenuClick(target) {
+        return this.startMenu.contains(target) || this.startButton.contains(target);
+      }
+    }
+
+    // AppWindow: base class for draggable, resizable windows with title bar controls.
+    class AppWindow {
+      constructor(options, windowManager) {
+        this.windowManager = windowManager;
+        this.id = options.id;
+        this.title = options.title;
+        this.width = options.width;
+        this.height = options.height;
+        this.content = options.content;
+        this.isMinimized = false;
+        this.isMaximized = false;
+        this.isActive = false;
+        this.zIndex = 1;
+        this.restoreBounds = null;
+        this.element = this.createWindowElement();
+        this.bindWindowEvents();
+      }
+
+      createWindowElement() {
+        const windowEl = document.createElement("div");
+        windowEl.className = "window";
+        windowEl.style.width = `${this.width}px`;
+        windowEl.style.height = `${this.height}px`;
+
+        const titleBar = document.createElement("div");
+        titleBar.className = "title-bar";
+
+        const titleLeft = document.createElement("div");
+        titleLeft.className = "title-bar-left";
+        const icon = document.createElement("div");
+        icon.className = "title-icon";
+        const titleText = document.createElement("span");
+        titleText.textContent = this.title;
+        titleLeft.append(icon, titleText);
+
+        const controls = document.createElement("div");
+        controls.className = "title-bar-controls";
+
+        const minButton = document.createElement("button");
+        minButton.className = "title-button bevel-raised";
+        minButton.textContent = "_";
+        minButton.dataset.action = "minimize";
+
+        const maxButton = document.createElement("button");
+        maxButton.className = "title-button bevel-raised";
+        maxButton.textContent = "[]";
+        maxButton.dataset.action = "maximize";
+
+        const closeButton = document.createElement("button");
+        closeButton.className = "title-button bevel-raised";
+        closeButton.textContent = "X";
+        closeButton.dataset.action = "close";
+
+        controls.append(minButton, maxButton, closeButton);
+        titleBar.append(titleLeft, controls);
+
+        const content = document.createElement("div");
+        content.className = "window-content";
+        content.append(this.content);
+
+        const resizeHandle = document.createElement("div");
+        resizeHandle.className = "resize-handle";
+
+        windowEl.append(titleBar, content, resizeHandle);
+
+        this.titleBar = titleBar;
+        this.maxButton = maxButton;
+        this.resizeHandle = resizeHandle;
+
+        return windowEl;
+      }
+
+      bindWindowEvents() {
+        this.element.addEventListener("mousedown", () => {
+          if (!this.isMinimized) {
+            this.windowManager.focusWindow(this);
+          }
+        });
+
+        this.titleBar.addEventListener("mousedown", (event) => {
+          if (event.target.closest(".title-bar-controls")) return;
+          if (this.isMaximized) return;
+          this.startDrag(event);
+        });
+
+        this.element.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-action]");
+          if (!button) return;
+          if (button.dataset.action === "minimize") {
+            this.windowManager.minimizeWindow(this);
+          }
+          if (button.dataset.action === "maximize") {
+            this.windowManager.toggleMaximize(this);
+          }
+          if (button.dataset.action === "close") {
+            this.windowManager.closeWindow(this);
+          }
+        });
+
+        this.resizeHandle.addEventListener("mousedown", (event) => {
+          if (this.isMaximized) return;
+          this.startResize(event);
+        });
+      }
+
+      startDrag(event) {
+        event.preventDefault();
+        const desktopRect = this.windowManager.desktop.container.getBoundingClientRect();
+        const rect = this.element.getBoundingClientRect();
+        const startLeft = rect.left - desktopRect.left;
+        const startTop = rect.top - desktopRect.top;
+        const startX = event.clientX;
+        const startY = event.clientY;
+
+        const onMove = (moveEvent) => {
+          const dx = moveEvent.clientX - startX;
+          const dy = moveEvent.clientY - startY;
+          const maxLeft = desktopRect.width - rect.width;
+          const maxTop = desktopRect.height - rect.height;
+          const newLeft = Math.max(0, Math.min(maxLeft, startLeft + dx));
+          const newTop = Math.max(0, Math.min(maxTop, startTop + dy));
+          this.setPosition(newLeft, newTop);
+        };
+
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      }
+
+      startResize(event) {
+        event.preventDefault();
+        const desktopRect = this.windowManager.desktop.container.getBoundingClientRect();
+        const rect = this.element.getBoundingClientRect();
+        const startWidth = rect.width;
+        const startHeight = rect.height;
+        const startX = event.clientX;
+        const startY = event.clientY;
+
+        const onMove = (moveEvent) => {
+          const dx = moveEvent.clientX - startX;
+          const dy = moveEvent.clientY - startY;
+          const maxWidth = desktopRect.width - (rect.left - desktopRect.left);
+          const maxHeight = desktopRect.height - (rect.top - desktopRect.top);
+          const newWidth = Math.max(240, Math.min(maxWidth, startWidth + dx));
+          const newHeight = Math.max(160, Math.min(maxHeight, startHeight + dy));
+          this.setSize(newWidth, newHeight);
+        };
+
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      }
+
+      setBounds(left, top, width, height) {
+        this.setPosition(left, top);
+        this.setSize(width, height);
+      }
+
+      setPosition(left, top) {
+        this.element.style.left = `${left}px`;
+        this.element.style.top = `${top}px`;
+      }
+
+      setSize(width, height) {
+        this.width = width;
+        this.height = height;
+        this.element.style.width = `${width}px`;
+        this.element.style.height = `${height}px`;
+      }
+
+      setActive(active) {
+        this.isActive = active;
+        this.element.classList.toggle("active", active);
+      }
+
+      setZIndex(value) {
+        this.zIndex = value;
+        this.element.style.zIndex = value;
+      }
+
+      minimize() {
+        this.isMinimized = true;
+        this.element.classList.add("minimized");
+        this.setActive(false);
+      }
+
+      restore() {
+        this.isMinimized = false;
+        this.element.classList.remove("minimized");
+      }
+
+      maximize() {
+        if (this.isMaximized) return;
+        const rect = this.element.getBoundingClientRect();
+        const desktopRect = this.windowManager.desktop.container.getBoundingClientRect();
+        this.restoreBounds = {
+          left: rect.left - desktopRect.left,
+          top: rect.top - desktopRect.top,
+          width: rect.width,
+          height: rect.height
+        };
+        this.setBounds(0, 0, desktopRect.width, desktopRect.height);
+        this.isMaximized = true;
+        this.maxButton.textContent = "R";
+        this.resizeHandle.style.display = "none";
+      }
+
+      restoreFromMaximize() {
+        if (!this.isMaximized || !this.restoreBounds) return;
+        this.setBounds(
+          this.restoreBounds.left,
+          this.restoreBounds.top,
+          this.restoreBounds.width,
+          this.restoreBounds.height
+        );
+        this.isMaximized = false;
+        this.maxButton.textContent = "[]";
+        this.resizeHandle.style.display = "block";
+      }
+    }
+
+    // AppRegistry: central place to register and launch apps by id.
+    class AppRegistry {
+      constructor(windowManager) {
+        this.windowManager = windowManager;
+        this.apps = new Map();
+      }
+
+      register(app) {
+        this.apps.set(app.id, app);
+      }
+
+      open(appId) {
+        const app = this.apps.get(appId);
+        if (app) {
+          app.open();
+        }
+      }
+    }
+
+    // NotepadApp: text editor window with auto-save to StorageManager.
+    class NotepadApp {
+      constructor(windowManager, storage) {
+        this.windowManager = windowManager;
+        this.storage = storage;
+        this.id = "notepad";
+      }
+
+      open() {
+        const textarea = document.createElement("textarea");
+        textarea.className = "notepad-text sunken";
+        textarea.value = this.storage.getString("notepadContent", "");
+        textarea.addEventListener("input", () => {
+          this.storage.setString("notepadContent", textarea.value);
+        });
+
+        const windowInstance = new AppWindow(
+          {
+            id: `notepad-${Date.now()}`,
+            title: "Notepad",
+            width: 520,
+            height: 360,
+            content: textarea
+          },
+          this.windowManager
+        );
+        this.windowManager.registerWindow(windowInstance);
+        textarea.focus();
+      }
+    }
+
+    // CmdApp: simple command prompt with help, ver, date, and cls commands.
+    class CmdApp {
+      constructor(windowManager) {
+        this.windowManager = windowManager;
+        this.id = "cmd";
+      }
+
+      open() {
+        const shell = document.createElement("div");
+        shell.className = "cmd-shell sunken";
+        const output = document.createElement("div");
+        output.className = "cmd-output";
+        const inputLine = document.createElement("div");
+        inputLine.className = "cmd-input-line";
+        const prompt = document.createElement("span");
+        prompt.textContent = "C:\\>";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "cmd-input";
+
+        inputLine.append(prompt, input);
+        shell.append(output, inputLine);
+
+        const windowInstance = new AppWindow(
+          {
+            id: `cmd-${Date.now()}`,
+            title: "Command Prompt",
+            width: 520,
+            height: 320,
+            content: shell
+          },
+          this.windowManager
+        );
+
+        const appendLine = (text) => {
+          output.textContent += `${text}\n`;
+          output.scrollTop = output.scrollHeight;
+        };
+
+        const execute = (command) => {
+          const cmd = command.trim().toLowerCase();
+          appendLine(`C:\\>${command}`);
+          if (!cmd) return;
+          if (cmd === "help") {
+            appendLine("help  ver  date  cls");
+            return;
+          }
+          if (cmd === "ver") {
+            appendLine("Windows 95 v4.0");
+            return;
+          }
+          if (cmd === "date") {
+            appendLine(new Date().toLocaleDateString());
+            return;
+          }
+          if (cmd === "cls") {
+            output.textContent = "";
+            return;
+          }
+          appendLine("Bad command or file name.");
+        };
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            execute(input.value);
+            input.value = "";
+          }
+        });
+
+        shell.addEventListener("click", () => input.focus());
+
+        this.windowManager.registerWindow(windowInstance);
+        input.focus();
+      }
+    }
+
+    // MyComputerApp: static window representing "My Computer".
+    class MyComputerApp {
+      constructor(windowManager) {
+        this.windowManager = windowManager;
+        this.id = "mycomputer";
+      }
+
+      open() {
+        const container = document.createElement("div");
+        container.className = "sunken";
+        container.style.height = "100%";
+        container.style.padding = "8px";
+        container.style.fontSize = "14px";
+        container.textContent = "My Computer (C:) and (A:) are ready.";
+
+        const windowInstance = new AppWindow(
+          {
+            id: `mycomputer-${Date.now()}`,
+            title: "My Computer",
+            width: 420,
+            height: 280,
+            content: container
+          },
+          this.windowManager
+        );
+
+        this.windowManager.registerWindow(windowInstance);
+      }
+    }
+
+    // SettingsApp: lightweight personalization panel backed by StorageManager.
+    class SettingsApp {
+      constructor(windowManager, storage, soundManager) {
+        this.windowManager = windowManager;
+        this.storage = storage;
+        this.soundManager = soundManager;
+        this.id = "settings";
+      }
+
+      open() {
+        const panel = document.createElement("div");
+        panel.className = "settings-panel";
+
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = this.storage.getBoolean("soundEnabled", true);
+        checkbox.addEventListener("change", () => {
+          this.soundManager.setEnabled(checkbox.checked);
+        });
+
+        label.append(checkbox, "Enable sounds");
+        panel.append(label);
+
+        const windowInstance = new AppWindow(
+          {
+            id: `settings-${Date.now()}`,
+            title: "Control Panel",
+            width: 320,
+            height: 200,
+            content: panel
+          },
+          this.windowManager
+        );
+
+        this.windowManager.registerWindow(windowInstance);
+      }
+    }
+
+    const storage = new StorageManager("win95");
+    const soundManager = new SoundManager(storage);
+    const taskbar = new Taskbar(
+      document.getElementById("start-button"),
+      document.getElementById("start-menu"),
+      document.getElementById("taskbar-items"),
+      document.getElementById("taskbar-clock"),
+      null,
+      soundManager
+    );
+
+    const windowManager = new WindowManager(
+      new Desktop(
+        document.getElementById("desktop"),
+        document.getElementById("desktop-context-menu"),
+        null
+      ),
+      taskbar
+    );
+
+    const appRegistry = new AppRegistry(windowManager);
+    appRegistry.register(new NotepadApp(windowManager, storage));
+    appRegistry.register(new CmdApp(windowManager));
+    appRegistry.register(new MyComputerApp(windowManager));
+    appRegistry.register(new SettingsApp(windowManager, storage, soundManager));
+
+    windowManager.desktop.appRegistry = appRegistry;
+    windowManager.desktop.init();
+
+    taskbar.appRegistry = appRegistry;
+    taskbar.setTaskClickHandler((id) => windowManager.handleTaskClick(id));
+    taskbar.init();
+
+    windowManager.desktop.setContextActionHandler((action) => {
+      if (action === "refresh") {
+        window.location.reload();
+      }
+      if (action === "properties") {
+        appRegistry.open("settings");
+      }
+    });
+
+    document.addEventListener("mousedown", (event) => {
+      if (!taskbar.isStartMenuClick(event.target)) {
+        taskbar.hideStartMenu();
+      }
+      if (!windowManager.desktop.isContextMenuClick(event.target)) {
+        windowManager.desktop.hideContextMenu();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      windowManager.windows.forEach((win) => {
+        if (win.isMaximized) {
+          win.setBounds(0, 0, windowManager.desktop.container.clientWidth, windowManager.desktop.container.clientHeight);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
